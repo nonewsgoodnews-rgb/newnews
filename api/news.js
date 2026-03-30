@@ -1,28 +1,17 @@
 // api/news.js
-const axios = require('axios');
-
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   
   try {
-    // ה-API הפנימי של כאן שמחזיר את המהדורות האחרונות
-    const response = await axios.get("https://www.kan.org.il/api/v1/podcast/1020", {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-      }
+    // ניסיון משיכה פשוט ללא ספריות חיצוניות
+    const response = await fetch("https://www.kan.org.il/Podcast/rss.aspx?feedid=1020", {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
     });
     
-    // עיבוד הנתונים
-    const items = response.data.items.slice(0, 24).map((item, i) => ({
-      id: item.id,
-      title: item.title,
-      timeUtc: item.publishDate,
-      audioUrl: item.audioUrl,
-      isLive: i === 0
-    }));
+    const data = await response.text();
     
-    res.status(200).json(items);
+    res.status(200).send(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-};
+}
