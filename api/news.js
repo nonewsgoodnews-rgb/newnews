@@ -1,37 +1,28 @@
 // api/news.js
 const axios = require('axios');
-const Parser = require('rss-parser');
-const parser = new Parser();
 
 module.exports = async (req, res) => {
-  // הגדרת CORS כדי לאפשר לאפליקציה שלך לגשת לזה מכל מקום
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // טיפול בבקשות OPTIONS (נדרש ל-CORS)
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
+  
   try {
-    // משיכת ה-RSS
-    const rssUrl = "https://podtail.com/podcast/חדשות-כאן/feed.xml";
-    const response = await axios.get(rssUrl);
-    const feed = await parser.parseString(response.data);
+    // ה-API הפנימי של כאן שמחזיר את המהדורות האחרונות
+    const response = await axios.get("https://www.kan.org.il/api/v1/podcast/1020", {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      }
+    });
     
-    // עיבוד הפריטים לפורמט שהאפליקציה שלך מצפה לו
-    const items = feed.items.slice(0, 24).map((item, i) => ({
-      id: item.guid || item.link,
+    // עיבוד הנתונים
+    const items = response.data.items.slice(0, 24).map((item, i) => ({
+      id: item.id,
       title: item.title,
-      timeUtc: item.pubDate,
-      audioUrl: item.enclosure?.url || item.link,
+      timeUtc: item.publishDate,
+      audioUrl: item.audioUrl,
       isLive: i === 0
     }));
     
     res.status(200).json(items);
   } catch (err) {
-    console.error("Error fetching RSS:", err);
     res.status(500).json({ error: err.message });
   }
 };
